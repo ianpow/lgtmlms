@@ -50,7 +50,7 @@ interface VirtualClassroomProps {
 const VirtualClassroom = ({
   sessionTitle = "New Session",
   participants: initialParticipants = [],
-  initialMessages = [],
+  messages = [],
   onSendMessage,
   onRaiseHand,
   onLeaveSession,
@@ -63,7 +63,7 @@ const VirtualClassroom = ({
     screen: false,
     stream: null as MediaStream | null,
   });
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [chatMessages, setChatMessages] = useState<Message[]>(messages);
   const [participants, setParticipants] = useState<Participant[]>([
     {
       id: "host",
@@ -163,7 +163,7 @@ const VirtualClassroom = ({
     e.preventDefault();
     if (newMessage.trim()) {
       onSendMessage(newMessage);
-      setMessages((prev) => [
+      setChatMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
@@ -338,7 +338,7 @@ const VirtualClassroom = ({
 
           <ScrollArea className="flex-1 mb-4">
             <div className="space-y-4">
-              {messages.map((message) => (
+              {chatMessages.map((message) => (
                 <div key={message.id} className="flex gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={message.userAvatar} />

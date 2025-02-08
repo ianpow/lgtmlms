@@ -23,7 +23,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { courseTemplates, contentTemplates, Template } from "./courseTemplates";
+import {
+  courseTemplates,
+  contentTemplates,
+  Template,
+  Section,
+} from "./courseTemplates";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import QuizEditor from "./QuizEditor";
 import ContentPreview from "./ContentPreview";

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
 import { Switch } from "../ui/switch";
 import CourseBuilder from "./CourseBuilder";
+import { Upload, Plus, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -87,32 +88,74 @@ const CourseForm = ({
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "scorm" | "cmi5",
+    type: "scorm" | "cmi5" | "thumbnail",
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData({
-        ...formData,
-        [`${type}File`]: file,
-        type,
-      });
+      if (type === "thumbnail") {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData({ ...formData, thumbnail: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFormData({
+          ...formData,
+          [`${type}File`]: file,
+          type,
+        });
+      }
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="title">Course Title</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            placeholder="Enter course title"
-            required
-          />
+        <div className="flex items-start gap-6">
+          <div className="w-[200px] h-[120px] relative rounded-lg overflow-hidden bg-muted">
+            {formData.thumbnail ? (
+              <img
+                src={formData.thumbnail}
+                alt="Course thumbnail"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No thumbnail
+              </div>
+            )}
+            <input
+              type="file"
+              id="thumbnail-upload"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => handleFileUpload(e, "thumbnail")}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="absolute bottom-2 right-2"
+              size="sm"
+              onClick={() =>
+                document.getElementById("thumbnail-upload")?.click()
+              }
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+          </div>
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="title">Course Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              placeholder="Enter course title"
+              required
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -344,156 +387,119 @@ const CourseForm = ({
         <div className="space-y-6">
           <div className="space-y-2">
             <Label>Required Skills</Label>
-            <ScrollArea className="h-[200px] border rounded-md p-4">
-              <div className="space-y-4">
+            <Select
+              value={
+                formData.skills.length === availableSkills?.length
+                  ? "all"
+                  : formData.skills.map((s) => s.skillId).join(",")
+              }
+              onValueChange={(value) => {
+                if (value === "all") {
+                  const allSkills =
+                    availableSkills?.map((skill) => ({
+                      skillId: skill.id,
+                      requiredLevel: 1,
+                      targetLevel: 3,
+                    })) || [];
+                  setFormData({ ...formData, skills: allSkills });
+                } else {
+                  const selectedSkills = value
+                    .split(",")
+                    .filter(Boolean)
+                    .map((id) => ({
+                      skillId: id,
+                      requiredLevel: 1,
+                      targetLevel: 3,
+                    }));
+                  setFormData({ ...formData, skills: selectedSkills });
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select skills" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Skills</SelectItem>
                 {availableSkills?.map((skill) => (
-                  <div key={skill.id} className="flex items-center gap-4">
-                    <Switch
-                      checked={formData.skills.some(
-                        (s) => s.skillId === skill.id,
-                      )}
-                      onCheckedChange={(checked) => {
-                        const newSkills = checked
-                          ? [
-                              ...formData.skills,
-                              {
-                                skillId: skill.id,
-                                requiredLevel: 1,
-                                targetLevel: 3,
-                              },
-                            ]
-                          : formData.skills.filter(
-                              (s) => s.skillId !== skill.id,
-                            );
-                        setFormData({ ...formData, skills: newSkills });
-                      }}
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{skill.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {skill.category}
-                      </p>
-                    </div>
-                    {formData.skills.some((s) => s.skillId === skill.id) && (
-                      <div className="flex items-center gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Required Level</Label>
-                          <Select
-                            value={formData.skills
-                              .find((s) => s.skillId === skill.id)
-                              ?.requiredLevel.toString()}
-                            onValueChange={(value) => {
-                              const newSkills = formData.skills.map((s) =>
-                                s.skillId === skill.id
-                                  ? { ...s, requiredLevel: parseInt(value) }
-                                  : s,
-                              );
-                              setFormData({ ...formData, skills: newSkills });
-                            }}
-                          >
-                            <SelectTrigger className="w-20">
-                              <SelectValue placeholder="Level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 2, 3, 4, 5].map((level) => (
-                                <SelectItem
-                                  key={level}
-                                  value={level.toString()}
-                                >
-                                  {level}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Target Level</Label>
-                          <Select
-                            value={formData.skills
-                              .find((s) => s.skillId === skill.id)
-                              ?.targetLevel.toString()}
-                            onValueChange={(value) => {
-                              const newSkills = formData.skills.map((s) =>
-                                s.skillId === skill.id
-                                  ? { ...s, targetLevel: parseInt(value) }
-                                  : s,
-                              );
-                              setFormData({ ...formData, skills: newSkills });
-                            }}
-                          >
-                            <SelectTrigger className="w-20">
-                              <SelectValue placeholder="Level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 2, 3, 4, 5].map((level) => (
-                                <SelectItem
-                                  key={level}
-                                  value={level.toString()}
-                                >
-                                  {level}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <SelectItem key={skill.id} value={skill.id}>
+                    {skill.name}
+                  </SelectItem>
                 ))}
-              </div>
-            </ScrollArea>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Departments</Label>
-              <ScrollArea className="h-[150px] border rounded-md p-4">
-                <div className="space-y-2">
+              <Select
+                value={
+                  formData.departmentIds.length === departments?.length
+                    ? "all"
+                    : formData.departmentIds.join(",")
+                }
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setFormData({
+                      ...formData,
+                      departmentIds: departments?.map((d) => d.id) || [],
+                    });
+                  } else {
+                    setFormData({
+                      ...formData,
+                      departmentIds: value.split(",").filter(Boolean),
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
                   {departments?.map((dept) => (
-                    <div key={dept.id} className="flex items-center gap-2">
-                      <Switch
-                        checked={formData.departmentIds.includes(dept.id)}
-                        onCheckedChange={(checked) => {
-                          const newDepts = checked
-                            ? [...formData.departmentIds, dept.id]
-                            : formData.departmentIds.filter(
-                                (id) => id !== dept.id,
-                              );
-                          setFormData({
-                            ...formData,
-                            departmentIds: newDepts,
-                          });
-                        }}
-                      />
-                      <span>{dept.name}</span>
-                    </div>
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
                   ))}
-                </div>
-              </ScrollArea>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
               <Label>Locations</Label>
-              <ScrollArea className="h-[150px] border rounded-md p-4">
-                <div className="space-y-2">
+              <Select
+                value={
+                  formData.locationIds.length === locations?.length
+                    ? "all"
+                    : formData.locationIds.join(",")
+                }
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setFormData({
+                      ...formData,
+                      locationIds: locations?.map((l) => l.id) || [],
+                    });
+                  } else {
+                    setFormData({
+                      ...formData,
+                      locationIds: value.split(",").filter(Boolean),
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select locations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations?.map((loc) => (
-                    <div key={loc.id} className="flex items-center gap-2">
-                      <Switch
-                        checked={formData.locationIds.includes(loc.id)}
-                        onCheckedChange={(checked) => {
-                          const newLocs = checked
-                            ? [...formData.locationIds, loc.id]
-                            : formData.locationIds.filter(
-                                (id) => id !== loc.id,
-                              );
-                          setFormData({ ...formData, locationIds: newLocs });
-                        }}
-                      />
-                      <span>{loc.name}</span>
-                    </div>
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </SelectItem>
                   ))}
-                </div>
-              </ScrollArea>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

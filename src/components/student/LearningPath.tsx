@@ -59,7 +59,12 @@ const LearningPath: React.FC<LearningPathProps> = ({
 
         <TabsContent value="recommendations">
           <PathComparison
-            paths={recommendedPaths}
+            paths={recommendedPaths.map((path) => ({
+              ...path,
+              skillsGained: path.skillGaps,
+              enrolledStudents: 0,
+              completionRate: 0,
+            }))}
             selectedPathId={selectedPath}
             onPathSelect={(pathId) => {
               setSelectedPath(pathId);

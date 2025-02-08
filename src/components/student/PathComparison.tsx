@@ -8,11 +8,21 @@ interface LearningPath {
   id: string;
   title: string;
   description: string;
-  difficulty: string;
+  courses: Array<{
+    id: string;
+    title: string;
+    description: string;
+    duration: number;
+    level: string;
+    skillsGained: string[];
+    prerequisites?: string[];
+  }>;
+  skillGaps: string[];
   estimatedDuration: number;
+  difficulty: string;
+  skillsGained: string[];
   enrolledStudents?: number;
   completionRate?: number;
-  skillsGained: string[];
   prerequisites?: string[];
 }
 
@@ -31,6 +41,10 @@ const PathComparison = ({
       difficulty: "beginner",
       estimatedDuration: 40,
       skillsGained: ["HTML", "CSS", "JavaScript"],
+      courses: [],
+      skillGaps: ["HTML", "CSS", "JavaScript"],
+      enrolledStudents: 150,
+      completionRate: 65,
     },
   ],
   selectedPathId,

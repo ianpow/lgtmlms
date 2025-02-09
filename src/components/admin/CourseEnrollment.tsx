@@ -32,6 +32,7 @@ interface CourseEnrollmentProps {
       afterDeadline: number[];
     };
   }) => void;
+  onError?: (error: string) => void;
 }
 
 const CourseEnrollment = ({

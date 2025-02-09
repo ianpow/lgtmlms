@@ -1,18 +1,10 @@
-import { supabase } from "./supabase";
-
-export const uploadFile = async (bucket: string, path: string, file: File) => {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, file);
-  return { data, error };
+// Storage utilities will be implemented later
+export const uploadFile = async (file: File): Promise<string> => {
+  // Mock implementation
+  return URL.createObjectURL(file);
 };
 
-export const getFileUrl = (bucket: string, path: string) => {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
-};
-
-export const deleteFile = async (bucket: string, path: string) => {
-  const { error } = await supabase.storage.from(bucket).remove([path]);
-  return { error };
+export const getFileUrl = (path: string): string => {
+  // Mock implementation
+  return path;
 };

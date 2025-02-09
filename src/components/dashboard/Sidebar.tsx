@@ -1,5 +1,5 @@
-import React from "react";
 import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import {
@@ -24,26 +24,22 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "/", label: "Home", icon: Home },
-  { id: "/courses", label: "Courses", icon: BookOpen },
+  { id: "/courses", label: "Your Courses", icon: BookOpen },
   { id: "/progress", label: "Progress", icon: BarChart2 },
   { id: "/discover", label: "Discover", icon: Compass },
   { id: "/community", label: "Community", icon: Users },
   { id: "/discussions", label: "Discussions", icon: MessageSquare },
-  { id: "/gamification", label: "Gamification", icon: Trophy },
+  { id: "/gamification", label: "Awards", icon: Trophy },
   { id: "/virtual-classroom", label: "Virtual Class", icon: Video },
   { id: "/quiz", label: "Quiz", icon: Brain },
   { id: "/profile", label: "Profile", icon: Settings },
   { id: "/admin", label: "Admin", icon: Settings, adminOnly: true },
 ];
 
-const Sidebar = ({
-  className = "",
-  activeItem = "home",
-  isAdmin = false,
-  onNavigate = (path: string) => {
-    window.location.pathname = path;
-  },
-}: SidebarProps) => {
+const Sidebar = ({ className = "", isAdmin = false }: SidebarProps) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeItem = location.pathname;
   return (
     <div
       className={cn(
@@ -77,7 +73,13 @@ const Sidebar = ({
                     "w-full justify-start gap-x-3",
                     activeItem === item.id && "bg-secondary",
                   )}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => {
+                    if (item.id === "/") {
+                      window.location.href = "/";
+                    } else {
+                      navigate(item.id);
+                    }
+                  }}
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}

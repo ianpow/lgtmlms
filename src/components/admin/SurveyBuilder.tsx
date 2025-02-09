@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -204,7 +204,7 @@ const SurveyBuilder = ({ onSave }: SurveyBuilderProps) => {
 
           <ScrollArea className="h-[400px]">
             <div className="space-y-4">
-              {questions.map((question, index) => (
+              {questions.map((question) => (
                 <Card key={question.id} className="p-4">
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -307,7 +307,7 @@ const SurveyBuilder = ({ onSave }: SurveyBuilderProps) => {
                                     <SelectValue placeholder="If answer is..." />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {question.options.map((option) => (
+                                    {question.options?.map((option) => (
                                       <SelectItem key={option} value={option}>
                                         {option}
                                       </SelectItem>

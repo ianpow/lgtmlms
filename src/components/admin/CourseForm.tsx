@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -21,6 +21,7 @@ interface CourseFormProps {
   onSubmit?: (courseData: CourseData) => void;
   onCancel?: () => void;
   isLoading?: boolean;
+  initialData?: CourseData;
   availableSkills?: Array<{
     id: string;
     name: string;
@@ -37,6 +38,7 @@ interface CourseFormProps {
 }
 
 interface CourseData {
+  moduleId: string;
   title: string;
   description: string;
   thumbnail: string;
@@ -59,17 +61,20 @@ interface CourseData {
   lrsSecret?: string;
   activityId?: string;
   registration?: string;
+  generateCertificate: boolean;
 }
 
 const CourseForm = ({
   onSubmit = () => {},
   onCancel = () => {},
   isLoading = false,
+  initialData,
   availableSkills = [],
   departments = [],
   locations = [],
 }: CourseFormProps) => {
   const [formData, setFormData] = useState<CourseData>({
+    moduleId: "",
     title: "",
     description: "",
     thumbnail: "",
@@ -79,7 +84,14 @@ const CourseForm = ({
     skills: [],
     departmentIds: [],
     locationIds: [],
+    generateCertificate: true,
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +123,19 @@ const CourseForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="moduleId">Module ID</Label>
+          <Input
+            id="moduleId"
+            value={formData.moduleId}
+            onChange={(e) =>
+              setFormData({ ...formData, moduleId: e.target.value })
+            }
+            placeholder="Enter module ID"
+            required
+          />
+        </div>
+
         <div className="flex items-start gap-6">
           <div className="w-[200px] h-[120px] relative rounded-lg overflow-hidden bg-muted">
             {formData.thumbnail ? (
@@ -206,7 +231,18 @@ const CourseForm = ({
           </div>
         </div>
 
-        <Tabs defaultValue="external" className="w-full">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="generateCertificate">Generate Certificate</Label>
+          <Switch
+            id="generateCertificate"
+            checked={formData.generateCertificate}
+            onCheckedChange={(checked) =>
+              setFormData({ ...formData, generateCertificate: checked })
+            }
+          />
+        </div>
+
+        <Tabs defaultValue={formData.type} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="external">External URL</TabsTrigger>
             <TabsTrigger value="scorm">SCORM</TabsTrigger>
@@ -377,6 +413,7 @@ const CourseForm = ({
 
           <TabsContent value="builder" className="space-y-4">
             <CourseBuilder
+              initialSections={formData.sections}
               onSave={(sections) =>
                 setFormData({ ...formData, type: "builder", sections })
               }
@@ -515,7 +552,11 @@ const CourseForm = ({
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Creating..." : "Create Course"}
+          {isLoading
+            ? "Creating..."
+            : initialData
+              ? "Update Course"
+              : "Create Course"}
         </Button>
       </div>
     </form>

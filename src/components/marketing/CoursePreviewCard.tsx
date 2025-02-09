@@ -5,7 +5,8 @@ import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 import { Star, Users, Clock, TrendingUp } from "lucide-react";
 
-interface CoursePreviewCardProps {
+export interface CoursePreviewCardProps {
+  id: string;
   title: string;
   description: string;
   thumbnail: string;
@@ -17,7 +18,8 @@ interface CoursePreviewCardProps {
   onEnroll: () => void;
 }
 
-const CoursePreviewCard = ({
+export const CoursePreviewCard = ({
+  id,
   title = "React Fundamentals",
   description = "Learn the basics of React development",
   thumbnail = "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=400&fit=crop",
@@ -28,6 +30,37 @@ const CoursePreviewCard = ({
   skills = ["React", "JavaScript", "Web Development"],
   onEnroll,
 }: CoursePreviewCardProps) => {
+  const handleEnroll = () => {
+    // Get current user
+    const currentUser = JSON.parse(localStorage.getItem("demoUser") || "{}");
+    if (!currentUser.id) {
+      console.error("No user found");
+      return;
+    }
+
+    // Add enrollment
+    const enrollments = JSON.parse(localStorage.getItem("enrollments") || "[]");
+    enrollments.push({
+      userId: currentUser.id,
+      courseId: id,
+      enrollmentDate: new Date().toISOString(),
+      progress: 0,
+    });
+    localStorage.setItem("enrollments", JSON.stringify(enrollments));
+
+    // Update course enrollments
+    const courses = JSON.parse(localStorage.getItem("courses") || "[]");
+    const updatedCourses = courses.map((c: any) => {
+      if (c.id === id) {
+        return { ...c, enrollments: (c.enrollments || 0) + 1 };
+      }
+      return c;
+    });
+    localStorage.setItem("courses", JSON.stringify(updatedCourses));
+
+    onEnroll();
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative">
@@ -70,7 +103,7 @@ const CoursePreviewCard = ({
           ))}
         </div>
 
-        <Button onClick={onEnroll} className="w-full">
+        <Button onClick={handleEnroll} className="w-full">
           Enroll Now
         </Button>
       </div>

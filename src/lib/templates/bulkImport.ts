@@ -6,9 +6,7 @@ interface ValidationRule {
   enum?: string[];
 }
 
-interface ValidationRules {
-  [key: string]: ValidationRule;
-}
+type ValidationRules = Record<string, ValidationRule>;
 
 export const importTemplates = {
   departments: {
@@ -115,7 +113,7 @@ export const validateImportData = (
         !rule.enum.includes(item[field])
       ) {
         errors.push(
-          `Row ${index + 1}: ${field} must be one of: ${"enum" in rule && rule.enum ? rule.enum.join(", ") : ""}`,
+          `Row ${index + 1}: ${field} must be one of: ${rule.enum.join(", ")}`,
         );
       }
     });

@@ -1,9 +1,8 @@
-import React from "react";
 import { Card } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Users, MessageSquare, Heart } from "lucide-react";
+import { Users, MessageSquare } from "lucide-react";
 
 const CommunityPage = () => {
   const communities = [

@@ -14,8 +14,8 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({
-  isAuthenticated = false,
-  isAdmin = false,
+  isAuthenticated = true,
+  isAdmin = true,
   onLogin = async (email: string, password: string) => {
     const demoUser = findDemoUser(email);
     if (demoUser) {
@@ -24,7 +24,8 @@ const Home: React.FC<HomeProps> = ({
     }
   },
 }) => {
-  const [recommendedCourses] = React.useState([
+  const [enrolledCourses, setEnrolledCourses] = React.useState([]);
+  const [recommendedCourses, setRecommendedCourses] = React.useState([
     {
       id: "1",
       title: "Web Development Fundamentals",
@@ -48,6 +49,33 @@ const Home: React.FC<HomeProps> = ({
     },
   ]);
 
+  React.useEffect(() => {
+    // Get current user
+    const currentUser = JSON.parse(localStorage.getItem("demoUser") || "{}");
+    if (!currentUser.id) return;
+
+    // Get enrollments for current user
+    const enrollments = JSON.parse(localStorage.getItem("enrollments") || "[]");
+    const userEnrollments = enrollments.filter(
+      (e) => e.userId === currentUser.id,
+    );
+
+    // Get courses
+    const allCourses = JSON.parse(localStorage.getItem("courses") || "[]");
+    const userCourses = userEnrollments
+      .map((enrollment) => {
+        const course = allCourses.find((c) => c.id === enrollment.courseId);
+        if (!course) return null;
+        return {
+          ...course,
+          progress: enrollment.progress,
+        };
+      })
+      .filter(Boolean);
+
+    setEnrolledCourses(userCourses);
+  }, []);
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
@@ -67,9 +95,13 @@ const Home: React.FC<HomeProps> = ({
             <CourseSection
               title="Continue Learning"
               type="continue"
+              courses={enrolledCourses}
+            />
+            <CourseSection
+              title="Popular Courses"
+              type="popular"
               courses={recommendedCourses}
             />
-            <CourseSection title="Popular Courses" type="popular" />
           </div>
         </main>
       </div>

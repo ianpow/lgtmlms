@@ -1,5 +1,4 @@
 import React from "react";
-import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
 import { ScrollArea } from "../ui/scroll-area";

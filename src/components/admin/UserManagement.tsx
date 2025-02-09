@@ -238,7 +238,14 @@ const UserManagement = () => {
         ),
       );
     } else {
-      setUsers((prev) => [...prev, { ...userData, id: Date.now().toString() }]);
+      const newUser = { ...userData, id: Date.now().toString() };
+      setUsers((prev) => [...prev, newUser]);
+      // Save users to localStorage
+      const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
+      allUsers.push(newUser);
+      localStorage.setItem("users", JSON.stringify(allUsers));
+      // Set as current user
+      localStorage.setItem("demoUser", JSON.stringify(newUser));
     }
   };
 

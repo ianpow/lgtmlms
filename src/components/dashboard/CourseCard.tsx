@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { PlayCircle, BookOpen } from "lucide-react";
 
 interface CourseCardProps {
+  id?: string;
   title?: string;
   thumbnail?: string;
   progress?: number;
@@ -13,6 +14,7 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({
+  id = "1",
   title = "Introduction to Web Development",
   thumbnail = "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=300&h=200&fit=crop",
   progress = 45,

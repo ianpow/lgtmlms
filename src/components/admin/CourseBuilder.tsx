@@ -2,7 +2,6 @@ import React from "react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 import {
   Plus,
   Trash2,
@@ -66,14 +65,19 @@ interface CourseBuilderProps {
   onSave: (sections: Section[]) => void;
 }
 
-const CourseBuilder = ({ onSave }: CourseBuilderProps) => {
-  const [sections, setSections] = React.useState<Section[]>([
-    {
-      id: "1",
-      title: "Introduction",
-      content: [],
-    },
-  ]);
+const CourseBuilder = ({
+  onSave,
+  initialSections,
+}: CourseBuilderProps & { initialSections?: Section[] }) => {
+  const [sections, setSections] = React.useState<Section[]>(
+    initialSections || [
+      {
+        id: "1",
+        title: "Introduction",
+        content: [],
+      },
+    ],
+  );
   const [collapsedSections, setCollapsedSections] = React.useState<string[]>(
     [],
   );
@@ -100,7 +104,6 @@ const CourseBuilder = ({ onSave }: CourseBuilderProps) => {
       return;
     }
 
-    // Handle content block reordering within a section
     const sectionId = result.droppableId.replace("section-content-", "");
     const section = sections.find((s) => s.id === sectionId);
     if (!section) return;
@@ -122,32 +125,6 @@ const CourseBuilder = ({ onSave }: CourseBuilderProps) => {
     );
   };
 
-  const duplicateContent = (sectionId: string, blockId: string) => {
-    setSections(
-      sections.map((section) => {
-        if (section.id === sectionId) {
-          const blockToDuplicate = section.content.find(
-            (b) => b.id === blockId,
-          );
-          if (!blockToDuplicate) return section;
-
-          return {
-            ...section,
-            content: [
-              ...section.content,
-              {
-                ...blockToDuplicate,
-                id: Date.now().toString(),
-                title: `${blockToDuplicate.title} (Copy)`,
-              },
-            ],
-          };
-        }
-        return section;
-      }),
-    );
-  };
-
   const addSection = () => {
     setSections([
       ...sections,
@@ -159,86 +136,41 @@ const CourseBuilder = ({ onSave }: CourseBuilderProps) => {
     ]);
   };
 
-  const addContent = (
-    sectionId: string,
-    type: ContentBlockType,
-    template?: keyof typeof contentTemplates,
-  ) => {
-    setSections(
-      sections.map((section) => {
-        if (section.id === sectionId) {
-          const newContent = template
-            ? { id: Date.now().toString(), ...contentTemplates[template] }
-            : {
-                id: Date.now().toString(),
-                type,
-                title: "",
-                content: "",
-                questions: type === "quiz" ? [] : undefined,
-                audioTracks: type === "audio" ? [] : undefined,
-              };
+  const addContent = React.useCallback(
+    (
+      sectionId: string,
+      type: ContentBlockType,
+      template?: keyof typeof contentTemplates,
+    ) => {
+      setSections((prevSections) => {
+        const newContent = template
+          ? { ...contentTemplates[template], id: Date.now().toString() }
+          : {
+              id: Date.now().toString(),
+              type,
+              title: "",
+              content: "",
+              questions: type === "quiz" ? [] : undefined,
+              audioTracks: type === "audio" ? [] : undefined,
+            };
 
-          return {
-            ...section,
-            content: [...section.content, newContent],
-          };
-        }
-        return section;
-      }),
-    );
-  };
-
-  const updateContent = (
-    sectionId: string,
-    contentId: string,
-    data: Partial<ContentBlock>,
-  ) => {
-    setSections(
-      sections.map((section) => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            content: section.content.map((content) => {
-              if (content.id === contentId) {
-                return { ...content, ...data };
-              }
-              return content;
-            }),
-          };
-        }
-        return section;
-      }),
-    );
-  };
-
-  const handleAudioUpload = async (
-    sectionId: string,
-    blockId: string,
-    file: File,
-  ) => {
-    // In a real app, you would upload this to your storage
-    // For now, we'll use a local URL
-    const url = URL.createObjectURL(file);
-    const newTrack: AudioTrack = {
-      id: Date.now().toString(),
-      title: file.name,
-      url,
-    };
-
-    const section = sections.find((s) => s.id === sectionId);
-    const block = section?.content.find((b) => b.id === blockId);
-
-    if (block) {
-      updateContent(sectionId, blockId, {
-        audioTracks: [...(block.audioTracks || []), newTrack],
-        activeTrackId: block.activeTrackId || newTrack.id,
+        return prevSections.map((section) => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              content: [...section.content, newContent],
+            };
+          }
+          return section;
+        });
       });
-    }
-  };
+    },
+    [],
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-lg font-semibold">Course Content</h2>
         <div className="flex gap-2">
           <DropdownMenu>
@@ -263,409 +195,259 @@ const CourseBuilder = ({ onSave }: CourseBuilderProps) => {
         </div>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="sections" type="section">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-6"
-            >
-              {sections.map((section, index) => (
-                <Draggable
-                  key={section.id}
-                  draggableId={section.id}
-                  index={index}
-                >
-                  {(provided) => (
-                    <Card
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="p-6"
-                    >
-                      <div className="flex items-center gap-4 mb-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleSection(section.id)}
-                        >
-                          {collapsedSections.includes(section.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronUp className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <div {...provided.dragHandleProps}>
-                          <GripVertical className="h-5 w-5 text-gray-400" />
+      <div className="flex-1 overflow-y-auto p-4">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="sections" type="section">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="space-y-4"
+              >
+                {sections.map((section, index) => (
+                  <Draggable
+                    key={section.id}
+                    draggableId={section.id}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <Card
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="p-4"
+                      >
+                        <div className="flex items-center gap-4 mb-4">
+                          <div {...provided.dragHandleProps}>
+                            <GripVertical className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <Input
+                            value={section.title}
+                            onChange={(e) => {
+                              setSections(
+                                sections.map((s) =>
+                                  s.id === section.id
+                                    ? { ...s, title: e.target.value }
+                                    : s,
+                                ),
+                              );
+                            }}
+                            placeholder="Section Title"
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleSection(section.id)}
+                          >
+                            {collapsedSections.includes(section.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronUp className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
-                        <Input
-                          value={section.title}
-                          onChange={(e) => {
-                            setSections(
-                              sections.map((s) =>
-                                s.id === section.id
-                                  ? { ...s, title: e.target.value }
-                                  : s,
-                              ),
-                            );
-                          }}
-                          placeholder="Section Title"
-                          className="text-lg font-semibold"
-                        />
-                      </div>
 
-                      {!collapsedSections.includes(section.id) && (
-                        <Droppable
-                          droppableId={`section-content-${section.id}`}
-                          type={`content-${section.id}`}
-                        >
-                          {(provided) => (
-                            <div
-                              {...provided.droppableProps}
-                              ref={provided.innerRef}
-                              className="space-y-4"
-                            >
-                              {section.content.map((block, blockIndex) => (
-                                <Draggable
-                                  key={block.id}
-                                  draggableId={block.id}
-                                  index={blockIndex}
-                                >
-                                  {(provided) => (
-                                    <Card
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className="p-4"
-                                    >
-                                      <div className="flex items-center gap-4 mb-4">
-                                        <div {...provided.dragHandleProps}>
-                                          <GripVertical className="h-5 w-5 text-gray-400" />
-                                        </div>
-                                        <Input
-                                          value={block.title}
-                                          onChange={(e) =>
-                                            updateContent(
-                                              section.id,
-                                              block.id,
-                                              {
-                                                title: e.target.value,
-                                              },
-                                            )
-                                          }
-                                          placeholder={`${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Title`}
-                                          className="flex-1"
-                                        />
-                                        <div className="flex gap-2">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                              setPreviewBlock({
-                                                sectionId: section.id,
-                                                blockId: block.id,
-                                              })
-                                            }
-                                          >
-                                            <Eye className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                              duplicateContent(
-                                                section.id,
-                                                block.id,
-                                              )
-                                            }
-                                          >
-                                            <Copy className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => {
-                                              setSections(
-                                                sections.map((s) => {
-                                                  if (s.id === section.id) {
-                                                    return {
-                                                      ...s,
-                                                      content: s.content.filter(
-                                                        (c) =>
-                                                          c.id !== block.id,
-                                                      ),
-                                                    };
-                                                  }
-                                                  return s;
-                                                }),
-                                              );
-                                            }}
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-
-                                      {block.type === "text" && (
-                                        <Textarea
-                                          value={block.content}
-                                          onChange={(e) =>
-                                            updateContent(
-                                              section.id,
-                                              block.id,
-                                              {
-                                                content: e.target.value,
-                                              },
-                                            )
-                                          }
-                                          placeholder="Enter content"
-                                        />
-                                      )}
-                                      {block.type === "video" && (
-                                        <Input
-                                          value={block.content}
-                                          onChange={(e) =>
-                                            updateContent(
-                                              section.id,
-                                              block.id,
-                                              {
-                                                content: e.target.value,
-                                              },
-                                            )
-                                          }
-                                          placeholder="Enter video URL"
-                                        />
-                                      )}
-                                      {block.type === "pdf" && (
-                                        <Input
-                                          value={block.content}
-                                          onChange={(e) =>
-                                            updateContent(
-                                              section.id,
-                                              block.id,
-                                              {
-                                                content: e.target.value,
-                                              },
-                                            )
-                                          }
-                                          placeholder="Enter PDF URL"
-                                        />
-                                      )}
-                                      {block.type === "audio" && (
-                                        <div className="space-y-4">
-                                          <div className="flex items-center gap-4">
-                                            <input
-                                              type="file"
-                                              id={`audio-upload-${block.id}`}
-                                              className="hidden"
-                                              accept="audio/*"
-                                              onChange={(e) => {
-                                                const file =
-                                                  e.target.files?.[0];
-                                                if (file) {
-                                                  handleAudioUpload(
-                                                    section.id,
-                                                    block.id,
-                                                    file,
-                                                  );
-                                                }
-                                              }}
-                                            />
-                                            <Button
-                                              variant="outline"
-                                              onClick={() =>
-                                                document
-                                                  .getElementById(
-                                                    `audio-upload-${block.id}`,
-                                                  )
-                                                  ?.click()
-                                              }
-                                            >
-                                              <Upload className="h-4 w-4 mr-2" />
-                                              Upload Audio
-                                            </Button>
-                                          </div>
-
-                                          <AudioPlayer
-                                            tracks={block.audioTracks || []}
-                                            activeTrack={block.audioTracks?.find(
-                                              (t) =>
-                                                t.id === block.activeTrackId,
-                                            )}
-                                            onTrackChange={(track) => {
-                                              updateContent(
-                                                section.id,
-                                                block.id,
-                                                {
-                                                  activeTrackId: track.id,
-                                                },
-                                              );
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                      {block.type === "quiz" && (
-                                        <QuizEditor
-                                          questions={block.questions || []}
-                                          onChange={(questions) =>
-                                            updateContent(
-                                              section.id,
-                                              block.id,
-                                              {
-                                                questions,
-                                              },
-                                            )
-                                          }
-                                        />
-                                      )}
-
-                                      {previewBlock?.sectionId === section.id &&
-                                        previewBlock?.blockId === block.id &&
-                                        block.type !== "quiz" &&
-                                        block.type !== "audio" && (
-                                          <ContentPreview
-                                            type={block.type}
-                                            content={block.content}
-                                          />
-                                        )}
-                                    </Card>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      )}
-
-                      {!collapsedSections.includes(section.id) && (
-                        <div className="flex space-x-2 mt-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-2" /> Add Video
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
+                        {!collapsedSections.includes(section.id) && (
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => addContent(section.id, "video")}
                               >
-                                Blank Video
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  addContent(section.id, "video", "videoLesson")
-                                }
-                              >
-                                Video Lesson Template
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-2" /> Add Text
+                                <Plus className="h-4 w-4 mr-2" /> Add Video
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => addContent(section.id, "text")}
                               >
-                                Blank Text
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  addContent(section.id, "text", "textReading")
-                                }
-                              >
-                                Reading Template
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addContent(section.id, "pdf")}
-                          >
-                            Add PDF
-                          </Button>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Music className="h-4 w-4 mr-2" /> Add Audio
+                                <Plus className="h-4 w-4 mr-2" /> Add Text
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => addContent(section.id, "audio")}
-                              >
-                                Blank Audio
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  addContent(section.id, "audio", "audioLesson")
-                                }
-                              >
-                                Audio Lesson Template
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-2" /> Add Quiz
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => addContent(section.id, "quiz")}
                               >
-                                Blank Quiz
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  addContent(
-                                    section.id,
-                                    "quiz",
-                                    "multipleChoiceQuiz",
-                                  )
-                                }
+                                <Plus className="h-4 w-4 mr-2" /> Add Quiz
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addContent(section.id, "audio")}
                               >
-                                Multiple Choice Template
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  addContent(
-                                    section.id,
-                                    "quiz",
-                                    "trueFalseQuiz",
-                                  )
-                                }
-                              >
-                                True/False Template
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      )}
-                    </Card>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                                <Music className="h-4 w-4 mr-2" /> Add Audio
+                              </Button>
+                            </div>
 
-      <div className="flex justify-between">
-        <Button onClick={addSection}>
-          <Plus className="h-4 w-4 mr-2" /> Add Section
-        </Button>
-        <Button onClick={() => onSave(sections)}>Save Course</Button>
+                            {section.content.map((block, blockIndex) => (
+                              <Card key={block.id} className="p-4">
+                                <div className="flex items-center gap-4 mb-4">
+                                  <Input
+                                    value={block.title}
+                                    onChange={(e) =>
+                                      setSections(
+                                        sections.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                content: s.content.map((c) =>
+                                                  c.id === block.id
+                                                    ? {
+                                                        ...c,
+                                                        title: e.target.value,
+                                                      }
+                                                    : c,
+                                                ),
+                                              }
+                                            : s,
+                                        ),
+                                      )
+                                    }
+                                    placeholder={`${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Title`}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setPreviewBlock({
+                                        sectionId: section.id,
+                                        blockId: block.id,
+                                      })
+                                    }
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSections(
+                                        sections.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                content: s.content.filter(
+                                                  (c) => c.id !== block.id,
+                                                ),
+                                              }
+                                            : s,
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+
+                                {block.type === "text" && (
+                                  <Textarea
+                                    value={block.content}
+                                    onChange={(e) =>
+                                      setSections(
+                                        sections.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                content: s.content.map((c) =>
+                                                  c.id === block.id
+                                                    ? {
+                                                        ...c,
+                                                        content: e.target.value,
+                                                      }
+                                                    : c,
+                                                ),
+                                              }
+                                            : s,
+                                        ),
+                                      )
+                                    }
+                                    placeholder="Enter content"
+                                  />
+                                )}
+
+                                {(block.type === "video" ||
+                                  block.type === "pdf") && (
+                                  <Input
+                                    value={block.content}
+                                    onChange={(e) =>
+                                      setSections(
+                                        sections.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                content: s.content.map((c) =>
+                                                  c.id === block.id
+                                                    ? {
+                                                        ...c,
+                                                        content: e.target.value,
+                                                      }
+                                                    : c,
+                                                ),
+                                              }
+                                            : s,
+                                        ),
+                                      )
+                                    }
+                                    placeholder={`Enter ${block.type} URL`}
+                                  />
+                                )}
+
+                                {block.type === "quiz" && (
+                                  <QuizEditor
+                                    questions={block.questions || []}
+                                    onChange={(questions) =>
+                                      setSections(
+                                        sections.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                content: s.content.map((c) =>
+                                                  c.id === block.id
+                                                    ? { ...c, questions }
+                                                    : c,
+                                                ),
+                                              }
+                                            : s,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                )}
+
+                                {previewBlock?.sectionId === section.id &&
+                                  previewBlock?.blockId === block.id && (
+                                    <div className="mt-4">
+                                      <ContentPreview
+                                        type={block.type}
+                                        content={block.content}
+                                        title={block.title}
+                                      />
+                                    </div>
+                                  )}
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </Card>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
+
+      <div className="p-4 border-t bg-background">
+        <div className="flex justify-between">
+          <Button onClick={addSection}>
+            <Plus className="h-4 w-4 mr-2" /> Add Section
+          </Button>
+          <Button onClick={() => onSave(sections)}>Save Course</Button>
+        </div>
       </div>
 
       <Dialog open={showEnrollment} onOpenChange={setShowEnrollment}>

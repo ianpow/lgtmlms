@@ -5,19 +5,7 @@ import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 
-interface AudioTrack {
-  id: string;
-  title: string;
-  url: string;
-}
-
-interface AudioPlayerProps {
-  url?: string;
-  title?: string;
-  tracks?: AudioTrack[];
-  activeTrack?: AudioTrack;
-  onTrackChange?: (track: AudioTrack) => void;
-}
+import { AudioPlayerProps } from "@/types/admin";
 
 const formatTime = (time: number) => {
   const minutes = Math.floor(time / 60);

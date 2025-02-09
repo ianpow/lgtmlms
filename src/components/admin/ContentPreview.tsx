@@ -1,12 +1,7 @@
-import React from "react";
 import { Card } from "../ui/card";
 import AudioPlayer from "./AudioPlayer";
 
-interface ContentPreviewProps {
-  type: "video" | "pdf" | "text" | "audio";
-  content: string;
-  title?: string;
-}
+import { ContentPreviewProps } from "@/types/admin";
 
 const ContentPreview = ({ type, content, title }: ContentPreviewProps) => {
   if (!content) return null;

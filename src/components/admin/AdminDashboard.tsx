@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Users,
@@ -14,19 +15,12 @@ import {
   Building2,
   GitBranch,
   BarChart2,
-  Settings,
 } from "lucide-react";
 import CourseForm from "./CourseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import ExternalContentSource from "./ExternalContentSource";
 import LogoUpload from "./LogoUpload";
-
-interface AdminDashboardProps {
-  totalStudents?: number;
-  totalCourses?: number;
-  completedCourses?: number;
-  onCreateCourse?: (courseData: any) => void;
-}
+import { AdminDashboardProps } from "@/types/admin";
 
 const AdminDashboard = ({
   totalStudents = 1250,
@@ -34,6 +28,7 @@ const AdminDashboard = ({
   completedCourses = 3200,
   onCreateCourse = () => {},
 }: AdminDashboardProps) => {
+  const navigate = useNavigate();
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [showExternalSource, setShowExternalSource] = useState(false);
   const [showLogoUpload, setShowLogoUpload] = useState(false);
@@ -42,7 +37,14 @@ const AdminDashboard = ({
   const handleCreateCourse = async (courseData: any) => {
     setIsCreating(true);
     try {
-      await onCreateCourse(courseData);
+      // Save to localStorage
+      const course = {
+        id: Date.now().toString(),
+        ...courseData,
+      };
+      const courses = JSON.parse(localStorage.getItem("courses") || "[]");
+      courses.push(course);
+      localStorage.setItem("courses", JSON.stringify(courses));
       setShowCourseForm(false);
     } finally {
       setIsCreating(false);
@@ -55,9 +57,6 @@ const AdminDashboard = ({
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <div className="flex gap-2">
-            <Button onClick={() => setShowCourseForm(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Create Course
-            </Button>
             <Button variant="outline" onClick={() => setShowLogoUpload(true)}>
               <Image className="h-4 w-4 mr-2" /> Update Logo
             </Button>
@@ -74,15 +73,15 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/courses/builder")}
+            onClick={() => navigate("/admin/courses")}
           >
             <BookOpen className="h-8 w-8" />
-            Course Builder
+            Course Management
           </Button>
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/skills")}
+            onClick={() => navigate("/admin/skill-management")}
           >
             <Brain className="h-8 w-8" />
             Skill Management
@@ -90,7 +89,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/users")}
+            onClick={() => navigate("/admin/user-management")}
           >
             <Users className="h-8 w-8" />
             User Management
@@ -98,7 +97,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/roles")}
+            onClick={() => navigate("/admin/role-management")}
           >
             <UserCog className="h-8 w-8" />
             Role Management
@@ -106,7 +105,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/departments")}
+            onClick={() => navigate("/admin/departments-locations")}
           >
             <Building2 className="h-8 w-8" />
             Departments & Locations
@@ -114,7 +113,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/learning-paths")}
+            onClick={() => navigate("/admin/learning-paths")}
           >
             <GitBranch className="h-8 w-8" />
             Learning Paths
@@ -122,7 +121,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/analytics")}
+            onClick={() => navigate("/admin/analytics")}
           >
             <BarChart2 className="h-8 w-8" />
             Analytics
@@ -130,7 +129,7 @@ const AdminDashboard = ({
           <Button
             variant="outline"
             className="h-32 flex flex-col items-center justify-center gap-2"
-            onClick={() => (window.location.href = "/admin/surveys")}
+            onClick={() => navigate("/admin/survey-builder")}
           >
             <MessageSquare className="h-8 w-8" />
             Survey Builder
